@@ -9,7 +9,7 @@ from constants import Constants
 
 from batch import generate_batch_id
 from metadata import generate_metadata
-from data_lake_controller import upload_to_minio
+from upload_controller import upload_to_minio
 
 from dotenv import load_dotenv
 
@@ -21,12 +21,8 @@ logger = logging.getLogger(__name__)
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 
-# FILE VALIDATION
+# Vérifie que le fichier existe et n'est pas vide.
 def validate_file(file_path: str) -> None:
-    """
-    Vérifie que le fichier existe et n'est pas vide.
-    """
-
     path = Path(file_path)
     if not path.exists():
         logger.error("Dataset file not found: %s", file_path)
@@ -44,13 +40,8 @@ def validate_file(file_path: str) -> None:
     logger.info("Dataset file found")
     logger.info("Dataset size: %.2f MB", file_size / (1024 * 1024))
 
-# SCHEMA VALIDATION
+# Vérifie que les colonnes du CSV correspondentexactement au schéma attendu.
 def validate_schema(file_path: str) -> None:
-    """
-    Vérifie que les colonnes du CSV correspondent
-    exactement au schéma attendu.
-    """
-
     with open(file_path, mode="r", encoding="utf-8") as csv_file:
         reader = csv.reader(csv_file)
         header = next(reader)
@@ -80,8 +71,6 @@ def main():
     metadata = generate_metadata(dataset_path, batch_id)
     logger.info(json.dumps(metadata, indent=4))
     upload_to_minio(dataset_path, metadata)
-
-    logger.info("Ingestion validation completed successfully")
 
 
 if __name__ == "__main__":
