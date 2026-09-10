@@ -61,7 +61,7 @@ def validate_schema(file_path: str) -> None:
 # MAIN
 def main():
     logger.info("Starting S&P 500 ingestion service")
-    dataset_path = os.getenv("SP_500_DATA_PATH", "./data/sp500_stock_data.csv")
+    dataset_path = os.getenv("SP_500_DATA_PATH", "/app/data/sp500_stock_data.csv")
     logger.info("Dataset path: %s", dataset_path)
     validate_file(dataset_path)
     validate_schema(dataset_path)

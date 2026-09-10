@@ -15,6 +15,25 @@ services:
     networks:
       - sp500-network
 
+  ingestion-service:
+    build:
+      context: ./ingestion-service
+      dockerfile: Dockerfile
+    container_name: sp500-ingestion
+    depends_on:
+      - minio
+    environment:
+      #DATASET_PATH: /app/data/sp500_stock_data.csv
+      DATASET_PATH: ${SP_500_DATA_PATH}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    volumes:
+      - ./data:/app/data:ro
+    networks:
+      - sp500-network
+
   # PostgreSQL - Serving Layer
   postgres:
     image: postgres:16

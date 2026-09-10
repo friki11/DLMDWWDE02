@@ -47,3 +47,21 @@ def create_ingestion_registry(client, bucket_name: str, metadata: dict) -> None:
         ContentType="application/json"
     )
     logger.info("Ingestion registry created successfully")
+
+
+# Vérifie que le bucket existe. Le crée automatiquement s'il n'existe pas.
+def ensure_bucket_exists(client, bucket_name: str) -> None:
+    try:
+        client.head_bucket(Bucket=bucket_name)
+        logger.info("Bucket already exists: %s", bucket_name)
+
+    except ClientError as error:
+        error_code = error.response["Error"].get("Code")
+        if error_code in ["404", "NoSuchBucket", "NotFound"]:
+            logger.info("Creating bucket: %s", bucket_name)
+            client.create_bucket(Bucket=bucket_name)
+            logger.info("Bucket created successfully")
+        else:
+            logger.error("Error checking bucket: %s", error)
+
+            raise

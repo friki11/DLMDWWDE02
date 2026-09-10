@@ -4,7 +4,7 @@ import json
 
 from constants import Constants
 from client_minio import get_minio_client
-from ingestion_controller import create_ingestion_registry, check_existing_ingestion
+from ingestion_controller import create_ingestion_registry, check_existing_ingestion, ensure_bucket_exists
 
 
 # LOGGING CONFIGURATION
@@ -32,6 +32,8 @@ def upload_to_minio(file_path: str, metadata: dict) -> None:
     bucket_name = os.getenv("MINIO_BUCKET")
     if not bucket_name:
         raise ValueError("MINIO_BUCKET environment variable is missing")
+
+    ensure_bucket_exists(client, bucket_name)
 
     checksum = metadata["file_checksum_sha256"]
     already_ingested = check_existing_ingestion(client=client, bucket_name=bucket_name, checksum=checksum)

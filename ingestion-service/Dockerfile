@@ -1,0 +1,19 @@
+# BASE IMAGE
+FROM python:3.12-slim
+
+# WORKING DIRECTORY
+WORKDIR /app
+
+# PYTHON CONFIGURATION
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# INSTALL DEPENDENCIES
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# COPY APPLICATION CODE
+COPY src/ ./src/
+
+# RUN APPLICATION
+CMD ["python", "src/main.py"]
