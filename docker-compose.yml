@@ -12,6 +12,12 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - sp500-network
 
@@ -21,7 +27,8 @@ services:
       dockerfile: Dockerfile
     container_name: sp500-ingestion
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     environment:
       #DATASET_PATH: /app/data/sp500_stock_data.csv
       DATASET_PATH: ${SP_500_DATA_PATH}
@@ -55,7 +62,8 @@ services:
     image: minio/mc:latest
     container_name: sp500-minio-init
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
