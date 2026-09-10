@@ -1,0 +1,67 @@
+services:
+  # MinIO - Data Lake
+  minio:
+    image: minio/minio:latest
+    container_name: sp500-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - sp500-network
+
+  # PostgreSQL - Serving Layer
+  postgres:
+    image: postgres:16
+    container_name: sp500-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - sp500-network
+
+  # MinIO initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: sp500-minio-init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+
+      mc mb --ignore-existing minio/${MINIO_BUCKET};
+
+      echo 'MinIO bucket initialized successfully';
+      "
+    networks:
+      - sp500-network
+
+# Volumes
+volumes:
+  minio_data:
+  postgres_data:
+
+
+# Network
+networks:
+  sp500-network:
+    driver: bridge
