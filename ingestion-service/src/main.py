@@ -46,9 +46,7 @@ def validate_schema(file_path: str) -> None:
         reader = csv.reader(csv_file)
         header = next(reader)
 
-    logger.info("CSV columns detected:")
-    logger.info(header)
-
+    logger.info("CSV columns detected: %s", header)
     if header != Constants.EXPECTED_SP_500_COLUMNS:
         logger.error("Invalid CSV schema")
         logger.error("Expected columns: %s", Constants.EXPECTED_SP_500_COLUMNS)

@@ -88,6 +88,23 @@ services:
     networks:
       - sp500-network
 
+  # Processing - Apache Spark
+  processing-service:
+    build:
+      context: ./processing-service
+      dockerfile: Dockerfile
+    container_name: sp500-processing
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    networks:
+      - sp500-network
+
 # Volumes
 volumes:
   minio_data:
