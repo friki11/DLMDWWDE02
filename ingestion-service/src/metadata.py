@@ -9,10 +9,10 @@ def generate_metadata( file_path: str, batch_id: str) -> dict:
 
     return {
         "batch_id": batch_id,
-        "ingestion_timestamp": (datetime.now(timezone.utc).isoformat()),
+        "ingestion_timestamp": datetime.now(timezone.utc).isoformat(),
         "source_file": path.name,
         "file_size_bytes": path.stat().st_size,
-        "file_checksum_sha256": (calculate_checksum(file_path)),
+        "file_checksum_sha256": calculate_checksum(file_path),
         "expected_columns": Constants.EXPECTED_SP_500_COLUMNS,
         "pipeline_type": "batch",
         "dataset": "sp500_stock_data",
