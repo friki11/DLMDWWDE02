@@ -14,6 +14,9 @@ def create_spark_session():
     minio_endpoint = os.getenv("MINIO_ENDPOINT")
     minio_access_key = os.getenv("MINIO_ACCESS_KEY")
     minio_secret_key = os.getenv("MINIO_SECRET_KEY")
+    if not all([minio_endpoint, minio_access_key, minio_secret_key]):
+        raise ValueError("Environment variables are not set")
+
     spark = (
         SparkSession
         .builder
@@ -27,8 +30,16 @@ def create_spark_session():
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+
         .config("spark.driver.extraClassPath", "/opt/spark/jars/*")
         .config("spark.executor.extraClassPath", "/opt/spark/jars/*")
+
+        .config("spark.driver.memory", "3g")
+        .config("spark.block.size", "67108864")
+        .config("spark.sql.parquet.compression.codec", "snappy")
+        .config("spark.memory.offHeap.enabled", "true")
+        .config("spark.memory.offHeap.size", "2g")
+
         .getOrCreate()
     )
 
@@ -39,6 +50,9 @@ def create_spark_session():
 # READ RAW DATA
 def read_raw_data(spark):
     bucket_name = os.getenv("MINIO_BUCKET")
+    if not bucket_name:
+        raise ValueError("Environment variables are not set")
+
     raw_data_path = f"s3a://{bucket_name}/raw/"
     logger.info("Reading RAW data from: %s", raw_data_path)
     dataframe = (
@@ -60,8 +74,8 @@ def read_raw_data(spark):
 
 # DATASET INFORMATION
 def display_dataset_information(dataframe):
-    logger.info("Number of rows: %s", dataframe.count())
-    logger.info("Number of columns: %s", len(dataframe.columns))
+    #logger.info("Number of rows: %s", dataframe.count())
+    #logger.info("Number of columns: %s", len(dataframe.columns))
     logger.info("Columns: %s", dataframe.columns)
     logger.info("Dataset schema:")
     dataframe.printSchema()

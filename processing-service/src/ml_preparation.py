@@ -7,13 +7,11 @@ from pyspark.sql.window import Window
 logger = logging.getLogger(__name__)
 
 def create_ticker_window():
-    window = (
+    return (
         Window
         .partitionBy("ticker")
-        .orderBy("date")
+        .orderBy("trading_date")
     )
-
-    return window
 
 def add_target_variable(dataframe):
     logger.info("Creating target variable")
@@ -27,10 +25,8 @@ def add_target_variable(dataframe):
     dataframe = dataframe.withColumn(
         "target_direction",
         f.when(f.col("next_close").isNull(), None)
-        .when(
-            f.col("next_close") > f.col("close_price"),
-            1
-        ).otherwise(0)
+        .when(f.col("next_close") > f.col("close_price"), 1)
+        .otherwise(0)
     )
 
     return dataframe
@@ -39,14 +35,13 @@ def check_ml_nulls(dataframe):
     logger.info("Checking NULL values before ML preparation")
 
     null_counts = dataframe.select([
-        f.sum(
-            f.col(column)
-            .isNull()
-            .cast("int")
-        ).alias(column)
+        f.sum(f.col(column).isNull().cast("int")).alias(column)
         for column in dataframe.columns
     ])
-    null_counts.show(truncate=False)
+    results = null_counts.collect()[0].asDict()
+    logger.info("ML NULL report: %s", results)
+
+    return results
 
 def select_ml_columns(dataframe):
     logger.info("Selecting ML columns")
@@ -98,8 +93,8 @@ def split_ml_dataset(dataframe):
     min_max_date = (
         dataframe
         .select(
-            f.min("date").alias("min_date"),
-            f.max("date").alias("max_date")
+            f.min("trading_date").alias("min_date"),
+            f.max("trading_date").alias("max_date")
         )
         .collect()[0]
     )
@@ -120,20 +115,20 @@ def create_temporal_splits(dataframe):
 
     train_dataframe = (
         dataframe
-        .filter(f.col("date") < f.lit("2020-01-01"))
+        .filter(f.col("trading_date") < f.lit("2020-01-01"))
     )
 
     validation_dataframe = (
         dataframe
         .filter(
-            (f.col("date") >= f.lit("2020-01-01")) &
-            (f.col("date") < f.lit("2023-01-01"))
+            (f.col("trading_date") >= f.lit("2020-01-01")) &
+            (f.col("trading_date") < f.lit("2023-01-01"))
         )
     )
 
     test_dataframe = (
         dataframe
-        .filter(f.col("date") >= f.lit("2023-01-01"))
+        .filter(f.col("trading_date") >= f.lit("2023-01-01"))
     )
 
     logger.info("Train records: %s", train_dataframe.count())

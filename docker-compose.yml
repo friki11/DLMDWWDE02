@@ -13,31 +13,12 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      #test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    networks:
-      - sp500-network
-
-  ingestion-service:
-    build:
-      context: ./ingestion-service
-      dockerfile: Dockerfile
-    container_name: sp500-ingestion
-    depends_on:
-      minio:
-        condition: service_healthy
-    environment:
-      #DATASET_PATH: /app/data/sp500_stock_data.csv
-      DATASET_PATH: ${SP_500_DATA_PATH}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET}
-    volumes:
-      - ./data:/app/data:ro
     networks:
       - sp500-network
 
@@ -88,6 +69,27 @@ services:
     networks:
       - sp500-network
 
+  # Ingestion
+  ingestion-service:
+    build:
+      context: ./ingestion-service
+      dockerfile: Dockerfile
+    container_name: sp500-ingestion
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      #DATASET_PATH: /app/data/sp500_stock_data.csv
+      DATASET_PATH: ${SP_500_DATA_PATH}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    volumes:
+      - ./data:/app/data:ro
+    networks:
+      - sp500-network
+
   # Processing - Apache Spark
   processing-service:
     build:
@@ -95,8 +97,8 @@ services:
       dockerfile: Dockerfile
     container_name: sp500-processing
     depends_on:
-      minio:
-        condition: service_healthy
+      ingestion-service:
+        condition: service_completed_successfully
     environment:
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}

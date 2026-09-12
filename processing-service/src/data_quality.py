@@ -12,9 +12,14 @@ def check_null_values(dataframe):
         f.sum(f.col(column).isNull().cast("int")).alias(column)
         for column in dataframe.columns
     ])
-    null_counts.show(truncate=False)
 
-    return null_counts
+    results = (
+        null_counts.collect()[0].asDict()
+    )
+
+    logger.info("Null value results: %s", results)
+
+    return results
 
 def check_duplicates(dataframe):
     logger.info("Checking duplicate rows")
@@ -49,6 +54,7 @@ def check_negative_values(dataframe):
         "High",
         "Low",
         "Open",
+        "Stock Splits",
         "Volume",
     ]
 

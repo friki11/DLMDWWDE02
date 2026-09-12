@@ -29,12 +29,10 @@ def standardize_column_names(dataframe):
 def convert_date(dataframe):
     logger.info("Converting date column")
 
-    dataframe = dataframe.withColumn(
+    return dataframe.withColumn(
         "trading_date",
         f.to_date(f.col("trading_date"), "yyyy-MM-dd")
     )
-
-    return dataframe
 
 def count_invalid_dates(dataframe):
     invalid_dates = (
@@ -61,9 +59,6 @@ def identify_invalid_records(dataframe):
             (f.col("volume") <= 0)
         )
     )
-
-    invalid_count = invalid_records.count()
-    logger.info("Invalid records found: %s", invalid_count)
 
     return invalid_records
 
@@ -95,11 +90,11 @@ def remove_duplicates(dataframe):
 
 def clean_data(dataframe):
     logger.info("Starting data cleaning")
+
     initial_count = dataframe.count()
     logger.info("Initial row count: %s", initial_count)
     dataframe = standardize_column_names(dataframe)
     dataframe = convert_date(dataframe)
-    count_invalid_dates(dataframe)
     invalid_records = identify_invalid_records(dataframe)
     invalid_count = invalid_records.count()
     dataframe = remove_invalid_records(dataframe)

@@ -5,6 +5,8 @@ from data_quality import run_data_quality_checks
 from cleaning import clean_data
 from feature_engineering import create_features
 from ml_preparation import prepare_ml_data
+from storage import save_processed_data
+from pyspark import StorageLevel
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -20,10 +22,19 @@ def main():
         display_dataset_information(dataframe)
         run_data_quality_checks(dataframe)
         clean_dataframe = clean_data(dataframe)
-        logger.info("Clean dataset row count: %s", clean_dataframe.count())
+        clean_dataframe = clean_dataframe.persist(StorageLevel.MEMORY_AND_DISK)
+        #logger.info("Clean dataset row count: %s", clean_dataframe.count())
         featured_dataframe = create_features(clean_dataframe)
-        logger.info("Feature dataset row count: %s", featured_dataframe.count())
+        featured_dataframe = featured_dataframe.persist(StorageLevel.MEMORY_AND_DISK)
+        #logger.info("Feature dataset row count: %s", featured_dataframe.count())
         train_dataframe, validation_dataframe, test_dataframe = prepare_ml_data(featured_dataframe)
+        save_processed_data(
+            clean_dataframe=clean_dataframe,
+            feature_dataframe=featured_dataframe,
+            train_dataframe=train_dataframe,
+            validation_dataframe=validation_dataframe,
+            test_dataframe=test_dataframe
+        )
         logger.info("ML datasets created successfully")
         """featured_dataframe.select(
             "trading_date",
@@ -38,6 +49,8 @@ def main():
             "cumulative_return",
         ).show(20, truncate=False)"""
         logger.info("Processing service completed successfully")
+        clean_dataframe.unpersist()
+        featured_dataframe.unpersist()
     except Exception as error:
         logger.exception("Processing service failed: %s", error)
 

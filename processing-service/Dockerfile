@@ -20,9 +20,6 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# INSTALL HADOOP AWS CONNECTORS
-RUN mkdir -p /opt/spark/jars
-
 RUN wget -q https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar \
     -P /usr/local/lib/python3.12/site-packages/pyspark/jars/
 
