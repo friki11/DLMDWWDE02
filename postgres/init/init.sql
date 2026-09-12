@@ -5,21 +5,32 @@ CREATE TABLE IF NOT EXISTS processed_stock_data (
     id BIGSERIAL PRIMARY KEY,
     trading_date DATE NOT NULL,
     ticker VARCHAR(20) NOT NULL,
-    adj_close DOUBLE PRECISION,
-    close_price DOUBLE PRECISION,
-    dividends DOUBLE PRECISION,
+
+    open_price DOUBLE PRECISION,
     high_price DOUBLE PRECISION,
     low_price DOUBLE PRECISION,
-    open_price DOUBLE PRECISION,
-    stock_splits DOUBLE PRECISION,
+    close_price DOUBLE PRECISION,
+    adj_close DOUBLE PRECISION,
     volume BIGINT,
+
+    dividends DOUBLE PRECISION,
+    stock_splits DOUBLE PRECISION,
+
     daily_return DOUBLE PRECISION,
-    price_range DOUBLE PRECISION,
-    price_change DOUBLE PRECISION,
-    volume_change BIGINT,
     moving_average_7 DOUBLE PRECISION,
     moving_average_30 DOUBLE PRECISION,
-    batch_id VARCHAR(50) NOT NULL,
+    volatility_7 DOUBLE PRECISION,
+    volatility_30 DOUBLE PRECISION,
+    volume_change BIGINT,
+    cumulative_return DOUBLE PRECISION,
+
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    day_of_week INTEGER NOT NULL,
+
+    price_range DOUBLE PRECISION,
+    price_change DOUBLE PRECISION,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -53,13 +64,7 @@ CREATE TABLE IF NOT EXISTS quarterly_metrics (
 
 -- UNIQUE INDEX
 CREATE UNIQUE INDEX IF NOT EXISTS idx_processed_date_ticker_batch
-ON processed_stock_data (trading_date, ticker, batch_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_monthly_ticker_period_batch
-ON monthly_metrics (ticker, year, month, batch_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_quarterly_ticker_period_batch
-ON quarterly_metrics (ticker, year, quarter, batch_id);
+ON processed_stock_data (trading_date, ticker);
 
 -- PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_processed_ticker
