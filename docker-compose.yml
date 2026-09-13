@@ -134,6 +134,26 @@ services:
     networks:
       - sp500-network
 
+  # API Service
+  api-service:
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    container_name: sp500-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8000:8000"
+    networks:
+      - sp500-network
+
 # Volumes
 volumes:
   minio_data:

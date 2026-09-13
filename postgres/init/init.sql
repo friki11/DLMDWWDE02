@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS processed_stock_data (
     month INTEGER NOT NULL,
     day_of_week INTEGER NOT NULL,
 
+    target_direction INTEGER,
+
     price_range DOUBLE PRECISION,
     price_change DOUBLE PRECISION,
 
