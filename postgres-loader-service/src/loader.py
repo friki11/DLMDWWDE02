@@ -2,8 +2,6 @@ import logging
 import os
 import psycopg2
 
-from pyspark.sql import functions as f
-
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +10,6 @@ logger = logging.getLogger(__name__)
 """
 def read_feature_data(spark):
     bucket_name = os.getenv("MINIO_BUCKET")
-
     features_path = f"s3a://{bucket_name}/processed/features/"
     logger.info("Reading feature data from: %s", features_path)
     dataframe = spark.read.parquet(features_path)
@@ -86,30 +83,14 @@ def optimize_partitions(dataframe):
 def truncate_processed_stock_data():
     logger.info("Truncating PostgreSQL processed_stock_data table")
 
-    postgres_host = os.getenv("POSTGRES_HOST", "postgres")
-    postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_database = os.getenv("POSTGRES_DB")
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    if not all([postgres_host, postgres_port, postgres_database,]):
-        raise ValueError("Environment variables are not set")
-
     connection = None
     cursor = None
     try:
-        connection = psycopg2.connect(
-            host=postgres_host,
-            port=postgres_port,
-            database=postgres_database,
-            user=postgres_user,
-            password=postgres_password,
-        )
-
+        connection = connect_to_db()
         cursor = connection.cursor()
         cursor.execute("TRUNCATE TABLE processed_stock_data RESTART IDENTITY;")
         connection.commit()
         logger.info("processed_stock_data table truncated successfully")
-
     except Exception as error:
         if connection is not None:
             connection.rollback()
@@ -117,7 +98,6 @@ def truncate_processed_stock_data():
         logger.exception("Failed to truncate processed_stock_data: %s", error)
 
         raise
-
     finally:
         if cursor is not None:
             cursor.close()
@@ -130,9 +110,9 @@ def truncate_processed_stock_data():
 def write_to_postgresql(dataframe):
     postgres_host = os.getenv("POSTGRES_HOST", "postgres")
     postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_database = os.getenv("POSTGRES_DB")
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
+    postgres_database = os.getenv("POSTGRES_DB", "sp500_db")
+    postgres_user = os.getenv("POSTGRES_USER", "sp500_admin")
+    postgres_password = os.getenv("POSTGRES_PASSWORD", "Password")
     jdbc_url = (
         f"jdbc:postgresql://"
         f"{postgres_host}:"
@@ -198,14 +178,8 @@ def load_features_to_postgresql(spark):
 
     # Validate loading
     if spark_record_count != postgresql_record_count:
+        raise RuntimeError(f"Record count mismatch: Spark={spark_record_count}, PostgreSQL={postgresql_record_count}")
 
-        raise RuntimeError(
-            "Record count mismatch: "
-            f"Spark={spark_record_count}, "
-            f"PostgreSQL={postgresql_record_count}"
-        )
-
-    logger.info("PostgreSQL record count validation successful")
     logger.info("PostgreSQL loading pipeline completed successfully")
 
 
@@ -215,24 +189,9 @@ def load_features_to_postgresql(spark):
 def check_postgresql_connection():
     logger.info("Checking PostgreSQL connection")
 
-    postgres_host = os.getenv("POSTGRES_HOST", "postgres")
-    postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_database = os.getenv("POSTGRES_DB")
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    if not all([postgres_host, postgres_port, postgres_database]):
-        raise ValueError("Environment variables are not set")
-
     connection = None
     try:
-        connection = psycopg2.connect(
-            host=postgres_host,
-            port=postgres_port,
-            database=postgres_database,
-            user=postgres_user,
-            password=postgres_password,
-        )
-
+        connection = connect_to_db()
         logger.info("PostgreSQL connection successful")
     except Exception as error:
         logger.exception("PostgreSQL connection failed: %s", error)
@@ -245,25 +204,10 @@ def check_postgresql_connection():
 def check_processed_stock_table():
     logger.info("Checking processed_stock_data table")
 
-    postgres_host = os.getenv("POSTGRES_HOST", "postgres")
-    postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_database = os.getenv("POSTGRES_DB")
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    if not all([postgres_host, postgres_port, postgres_database]):
-        raise ValueError("Environment variables are not set")
-
     connection = None
     cursor = None
     try:
-        connection = psycopg2.connect(
-            host=postgres_host,
-            port=postgres_port,
-            database=postgres_database,
-            user=postgres_user,
-            password=postgres_password,
-        )
-
+        connection = connect_to_db()
         cursor = connection.cursor()
         cursor.execute("""
             SELECT EXISTS (
@@ -284,26 +228,26 @@ def check_processed_stock_table():
         if connection is not None:
             connection.close()
 
-def get_postgresql_record_count():
+def connect_to_db():
     postgres_host = os.getenv("POSTGRES_HOST", "postgres")
     postgres_port = os.getenv("POSTGRES_PORT", "5432")
-    postgres_database = os.getenv("POSTGRES_DB")
-    postgres_user = os.getenv("POSTGRES_USER")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    if not all([postgres_host, postgres_port, postgres_database]):
-        raise ValueError("Environment variables are not set")
+    postgres_database = os.getenv("POSTGRES_DB", "sp500_db")
+    postgres_user = os.getenv("POSTGRES_USER", "sp500_admin")
+    postgres_password = os.getenv("POSTGRES_PASSWORD", "Password")
 
+    return psycopg2.connect(
+        host=postgres_host,
+        port=postgres_port,
+        database=postgres_database,
+        user=postgres_user,
+        password=postgres_password,
+    )
+
+def get_postgresql_record_count():
     connection = None
     cursor = None
     try:
-        connection = psycopg2.connect(
-            host=postgres_host,
-            port=postgres_port,
-            database=postgres_database,
-            user=postgres_user,
-            password=postgres_password,
-        )
-
+        connection = connect_to_db()
         cursor = connection.cursor()
         cursor.execute("SELECT COUNT(*) FROM processed_stock_data;")
         record_count = cursor.fetchone()[0]

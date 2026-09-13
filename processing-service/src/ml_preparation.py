@@ -17,10 +17,7 @@ def add_target_variable(dataframe):
     logger.info("Creating target variable")
 
     window = create_ticker_window()
-    dataframe = dataframe.withColumn(
-        "next_close",
-        f.lead("close_price").over(window)
-    )
+    dataframe = dataframe.withColumn("next_close", f.lead("close_price").over(window))
 
     dataframe = dataframe.withColumn(
         "target_direction",
@@ -103,10 +100,7 @@ def split_ml_dataset(dataframe):
     max_date = (min_max_date["max_date"])
     logger.info("Dataset minimum date: %s", min_date)
 
-    logger.info(
-        "Dataset maximum date: %s",
-        max_date
-    )
+    logger.info("Dataset maximum date: %s", max_date)
 
     return min_date, max_date
 

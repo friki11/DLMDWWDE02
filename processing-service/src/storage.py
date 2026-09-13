@@ -81,11 +81,6 @@ def save_processed_data(clean_dataframe, feature_dataframe, train_dataframe, val
 
     save_clean_data(clean_dataframe)
     save_feature_data(feature_dataframe)
-
-    save_ml_datasets(
-        train_dataframe,
-        validation_dataframe,
-        test_dataframe
-    )
+    save_ml_datasets(train_dataframe, validation_dataframe, test_dataframe)
 
     logger.info("Data storage completed successfully")

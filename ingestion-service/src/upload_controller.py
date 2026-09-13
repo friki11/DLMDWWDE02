@@ -11,7 +11,7 @@ from ingestion_controller import create_ingestion_registry, check_existing_inges
 logging.basicConfig(level=logging.INFO, format=Constants.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
-# Vérifie que l'objet existe dans MinIO et que sa taille correspond au fichier source.
+# Checks that the object exists in MinIO and that its size corresponds to the source file.
 def verify_upload(client, bucket_name: str, object_key: str, expected_size: int) -> None:
     try:
         response = client.head_object(Bucket=bucket_name, Key=object_key)
@@ -23,8 +23,7 @@ def verify_upload(client, bucket_name: str, object_key: str, expected_size: int)
         logger.info("Upload verification successful")
 
     except Exception as error:
-        logger.error("Upload verification failed: %s",error)
-        raise
+        raise Exception("Upload verification failed: %s", error)
 
 
 def upload_to_minio(file_path: str, metadata: dict) -> None:

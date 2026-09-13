@@ -8,7 +8,7 @@ from constants import Constants
 logging.basicConfig(level=logging.INFO, format=Constants.LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
-# Vérifie si un fichier avec le même checksum a déjà été ingéré.
+# Checks if a file with the same checksum has already been ingested.
 def check_existing_ingestion(client, bucket_name: str, checksum: str) -> bool:
     registry_key = f"ingestion_registry/{checksum}.json"
     try:
@@ -17,7 +17,6 @@ def check_existing_ingestion(client, bucket_name: str, checksum: str) -> bool:
         logger.warning("Checksum: %s", checksum)
 
         return True
-
     except ClientError as error:
         error_code = error.response["Error"].get("Code")
         if error_code in ["404", "NoSuchKey", "NotFound"]:
@@ -28,7 +27,7 @@ def check_existing_ingestion(client, bucket_name: str, checksum: str) -> bool:
         raise
 
 
-#Crée un registre permettant d'identifier les fichiers déjà ingérés.
+# Create a registry to identify files that have already been ingested.
 def create_ingestion_registry(client, bucket_name: str, metadata: dict) -> None:
     checksum = metadata["file_checksum_sha256"]
     registry_key = f"ingestion_registry/{checksum}.json"
@@ -49,12 +48,11 @@ def create_ingestion_registry(client, bucket_name: str, metadata: dict) -> None:
     logger.info("Ingestion registry created successfully")
 
 
-# Vérifie que le bucket existe. Le crée automatiquement s'il n'existe pas.
+# Checks that the bucket exists. Creates it automatically if it does not exist.
 def ensure_bucket_exists(client, bucket_name: str) -> None:
     try:
         client.head_bucket(Bucket=bucket_name)
         logger.info("Bucket already exists: %s", bucket_name)
-
     except ClientError as error:
         error_code = error.response["Error"].get("Code")
         if error_code in ["404", "NoSuchBucket", "NotFound"]:

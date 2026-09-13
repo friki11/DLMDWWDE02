@@ -7,19 +7,17 @@ from pyspark.sql.window import Window
 logger = logging.getLogger(__name__)
 
 def create_ticker_window():
-    ticker_window = (
+    return (
         Window
         .partitionBy("ticker")
         .orderBy("trading_date")
     )
 
-    return ticker_window
-
 def add_daily_return(dataframe):
     logger.info("Adding daily return feature")
+
     window = create_ticker_window()
     dataframe = dataframe.withColumn("previous_close", f.lag("close_price").over(window))
-
     dataframe = dataframe.withColumn(
         "daily_return",
         f.when(

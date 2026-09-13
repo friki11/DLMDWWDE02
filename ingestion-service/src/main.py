@@ -21,26 +21,23 @@ logger = logging.getLogger(__name__)
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 
-# Vérifie que le fichier existe et n'est pas vide.
+# Check that the file exists and is not empty.
 def validate_file(file_path: str) -> None:
     path = Path(file_path)
     if not path.exists():
-        logger.error("Dataset file not found: %s", file_path)
         raise FileNotFoundError(f"Dataset file not found: {file_path}")
 
     if not path.is_file():
-        logger.error("%s is not a file", file_path)
         raise ValueError(f"{file_path} is not a valid file")
 
     file_size = path.stat().st_size
     if file_size == 0:
-        logger.error("Dataset file is empty")
         raise ValueError("Dataset file is empty")
 
     logger.info("Dataset file found")
     logger.info("Dataset size: %.2f MB", file_size / (1024 * 1024))
 
-# Vérifie que les colonnes du CSV correspondentexactement au schéma attendu.
+# Verify that the columns of the CSV correspond exactly to the expected pattern.
 def validate_schema(file_path: str) -> None:
     with open(file_path, mode="r", encoding="utf-8") as csv_file:
         reader = csv.reader(csv_file)
@@ -56,7 +53,6 @@ def validate_schema(file_path: str) -> None:
 
     logger.info("CSV schema validation successful")
 
-# MAIN
 def main():
     logger.info("Starting S&P 500 ingestion service")
     dataset_path = os.getenv("SP_500_DATA_PATH", "/app/data/sp500_stock_data.csv")
