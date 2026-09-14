@@ -71,8 +71,7 @@ def get_ticker(ticker: str, limit: int = 50):
                 moving_average_30,
                 volatility_7,
                 volatility_30,
-                volume_change,
-                target_direction
+                volume_change
 
             FROM processed_stock_data
 
@@ -107,8 +106,7 @@ def get_ticker_history(ticker: str, limit: int = 50):
                 moving_average_30,
                 volatility_7,
                 volatility_30,
-                volume_change,
-                target_direction
+                volume_change
 
             FROM processed_stock_data
 
